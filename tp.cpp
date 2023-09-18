@@ -3,9 +3,14 @@
  
 using namespace std;
 
-struct Ponto {
+
+
+class Ponto {
+public:
     double x, y;
     int id;
+    vector<bool> visited;
+    vector<Ponto> edgepoints;
     vector<int> edges;
     Ponto(double a, double b){
         x = a;
@@ -18,14 +23,53 @@ struct Ponto {
         id = c;
     }
     void add(Ponto a){
-        edges.push_back(a.id);
+        edgepoints.push_back(a);
+    }
+    void add(int i){
+        edges.push_back(i);
+    }
+    void visit(int i){
+        visited.push_back(i);
+    }
+    //complexidade O(v)
+    void build(vector<Ponto> v){
+        for (auto u : edges)
+            edgepoints.push_back(v[u]);
+    }
+    //retorna o angulo polar de uma coordenada
+    double polar(){
+        double angulo = atan2(y, x);
+        if (angulo < 0) angulo = angulo + 2*M_PI;
+        return angulo;
+    }
+    //retorna o angulo entre uma linha e um ponto
+    double relativo(Ponto a, Ponto b, Ponto c){
+        double angulo = (b - a).polar() - (c - b).polar();
+        return angulo;
     }
 
     Ponto operator + (const Ponto p) const { return Ponto(x+p.x, y+p.y); }
     Ponto operator - (const Ponto p) const { return Ponto(x-p.x, y-p.y); }
     Ponto operator * (const double d) const { return Ponto(x*d, y*d); }
     Ponto operator / (const double d) const { return Ponto(x/d, y/d); }
+
+    bool clockwise(Ponto c, Ponto d){
+        Ponto a(1,0);
+        Ponto b = *this - a;
+        double angc = relativo(b, *this, c);
+        double angd = relativo(b, *this, d);
+        return (angc>angd);
+    }
+
+    void edgesort(){
+        sort(edgepoints.begin(), 
+             edgepoints.begin() + edgepoints.size(), 
+             [&](Ponto a, Ponto b) {
+             return clockwise(a, b);
+             });
+    }
 };
+
 
 // Distancia euclidiana de a para b.
 double Distancia(Ponto a, Ponto b) {
@@ -49,59 +93,138 @@ int TipoCurva(Ponto a, Ponto b, Ponto c) {
     if (v > 0) return +1; // direita.
     return 0; // em frente.
 }
-//retorna o angulo polar de uma coordenada
-double polar(Ponto a){
-    double angulo = atan2(a.y, a.x);
-    if (angulo < 0) angulo = angulo + 2*M_PI;
-    return angulo;
-}
-//retorna o angulo entre uma linha e um ponto
-double relativo(Ponto a, Ponto b, Ponto c){
-    double angulo = polar(b - a) - polar(c);
-    return angulo;
-}
-bool clockwise(Ponto c, Ponto d){
-    Ponto a(0, 0);
-    Ponto b(1, 0);
-    double angc = relativo(a, b, c);
-    double angd = relativo(a, b, d);
-    return (angc>angd);
-}
 
 
+vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco){
+    vector<int> face;
+    Ponto* prox;
+    //verifica se deu uma volta completa
+    if (vertice == comeco) {
+        return face;
+        }
+    //para cada aresta saindo do vertice
+    for (int i = 0; i < v[vertice].edgepoints.size(); i++){
+        //encontra a de onde viemos
+        if (v[vertice].edgepoints[i].id == saida) {
+            //safeguard para loop
+            if (i+1==v[vertice].edgepoints.size()) i = -1;
+            //designa o proximo como o depois
+            prox = &v[vertice].edgepoints[i+1];
+            break;
+        }
+    }
+    face = dfscw(v, vertice, (*prox).id, comeco);
+    face.push_back((*prox).id);
+    return face;         
+}
+vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco){
+    vector<int> face;
+    Ponto* prox;
+    if (vertice == comeco) return face;
+    for (int i = 0; i < v[vertice].edgepoints.size(); i++){
+        if (v[vertice].edgepoints[i].id == saida) {
+            if (i==0) i = v[vertice].edgepoints.size();
+            prox = &v[vertice].edgepoints[i-1];
+            break;
+        }
+    }
+    face = dfsccw(v, vertice, (*prox).id, comeco);
+    face.push_back((*prox).id);
+    return face;         
+}
 
 int main(){
-    
-    int n, e;
-    cin >> n >> e;
-    vector<int> vEdges[n];
-    vector<Ponto> vValue;
+    int n, ed;
+    cin >> n >> ed;
+    //vector<Ponto> v[n];
+    vector<Ponto> v; //listas de adjacencia
+    int visited[n][n] = {0};
     for (int i = 0; i<n; i++){
-        int x, y, edgenum, edge;
+        double x, y; 
+        int edgenum, edge;
         cin >> x >> y;
-        Ponto a(x, y, i+1);
-        vValue.push_back(a);
+        Ponto a(x, y, i);
+        v.push_back(a);
+        // armazene cada vertice
         cin >> edgenum;
         for (int j = 0; j<edgenum; j++){
             cin >> edge;
-            vEdges[j].push_back(edge);
+            v[i].add(edge-1);
+            // armazene suas arestas
         }
     }
-    for (int i = 0; i<n; i++)
-        sort(vEdges[i].begin(), vEdges[i].begin()+vEdges[i].size(), clockwise);
-    
+    //cout << "breakpoint 1\n";
+    for (int i = 0; i<n; i++){
+        v[i].build(v);
+        v[i].edgesort();
+    }
+    //cout << "breakpoint 2\n";
+    //para cada vertice
+    for (int i = 0; i<n; i++){
+        //para cada aresta
+        for (auto u : v[i].edgepoints){
+            //se ainda nao passamos cw
+            if (visited[u.id][i] == 0){
+                //passa e coleta
+                vector<int> face = dfscw(v, i, u.id, i);
+                face.push_back(u.id);
+                //cout << "breakpoint 3: s=" << i << " v=" << u.id << endl;;
+                    
+                    visited[face[0]][face[face.size()-1]] = 1;
+                    visited[face[face.size()-1]][face[0]] = 1;
+                    cout << face[0]+1 << " ";
+                for (int k = 1; k<face.size(); k++){
+                    visited[face[k]][face[k-1]] = 1;
+                    visited[face[k-1]][face[k]] = 1;
+                    cout << face[k]+1 << " ";
+                }
+                cout << "\n";
+            }
+            if (visited[u.id][i] == 1){
+                vector<int> face = dfsccw(v, i, u.id, i);
+                face.push_back(u.id);
+                    visited[face[0]][face[face.size()-1]] = 3;
+                    visited[face[face.size()-1]][face[0]] = 3;
+                    cout << face[0]+1 << " ";
+                for (int k = 1; k<face.size(); k++){
+                    visited[face[k]][face[k-1]] = 3;
+                    visited[face[k-1]][face[k]] = 3;
+                    cout << face[k]+1 << " ";
+                }
+                cout << "\n";
+            }
+            if (visited[u.id][i] == 2){
+                vector<int> face = dfscw(v, i, u.id, i);
+                face.push_back(u.id);
+                    visited[face[0]][face[face.size()-1]] = 3;
+                    visited[face[face.size()-1]][face[0]] = 3;
+                    cout << face[0]+1 << " ";
+                for (int k = 1; k<face.size(); k++){
+                    visited[face[k]][face[k-1]] = 3;
+                    visited[face[k-1]][face[k]] = 3;
+                    cout << face[k]+1 << " ";
+                }
+                cout << "\n";
+            }
+        }
+    }
 
-    Ponto a(1, 1);
-    Ponto b(-2, 1);
-    Ponto c(-4, -2);
-    Ponto d(5, -2);
-    cout << TipoCurva(a, b, c) << endl << TipoCurva(a, b, d) << endl;
-    //cout << atan2(c-b, b-a) - atan2(b-a, a) << endl;
-    cout << relativo(a, b, c) << endl;
-    cout << polar(b) << endl;
-    cout << polar(c) << endl;
-    cout << polar(d) << endl;
-    cout << polar(b-a) << endl;
-    cout << polar(c-b) << endl;
-    return 0;
+    // Ponto a(1, 1);
+    // Ponto b(0, 1);
+    // Ponto c(1, 2);
+    // Ponto d(2, 1);
+    // Ponto e(1, 0);
+    // cout << TipoCurva(a, b, c) << endl << TipoCurva(a, b, d) << endl;
+    // cout << atan2(c-b, b-a) - atan2(b-a, a) << endl;
+    // cout << relativo(a, d, d) << endl;
+    // cout << relativo(d, a, c) << endl;
+    // cout << relativo(d, a, b) << endl;
+    // cout << relativo(d, a, e) << endl;
+    // cout << "\npolares:\n";
+    // cout << a.polar() << endl;
+    // cout << b.polar() << endl;
+    // cout << c.polar() << endl;
+    // cout << d.polar() << endl;
+    // cout << e.polar() << endl;
+    // return 0;
 };
