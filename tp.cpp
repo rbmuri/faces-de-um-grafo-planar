@@ -133,6 +133,15 @@ vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco){
     return face;         
 }
 
+void printface(vector<int> f){
+        int size = f.size();
+        cout << size+1 << " "; 
+        cout << f[size-1]+1;
+        for (int k = 0; k<f.size(); k++)
+            cout << " " << f[k]+1;
+        cout << "\n";
+}
+
 int main(){
     int n, ed;
     cin >> n >> ed;
@@ -158,68 +167,68 @@ int main(){
         v[i].build(v);
         v[i].edgesort();
     }
+    vector<vector<int>> faces;
     //cout << "breakpoint 2\n";
     //para cada vertice
     for (int i = 0; i<n; i++){
         //para cada aresta
         for (auto u : v[i].edgepoints){
+            
             //se ainda nao passamos cw
             if (visited[u.id][i] == 0){
                 //passa e coleta
                 vector<int> face = dfscw(v, i, u.id, i);
                 face.push_back(u.id);
-                cout << "v: " << i+1 << endl;
-                cout << face.size()+1 << " "; 
-                cout << i+1 << " ";
-                //cout << "breakpoint 3: s=" << i << " v=" << u.id << endl;;
-                    
-                    visited[face[0]][face[face.size()-1]] = 1;
-                    visited[face[face.size()-1]][face[0]] = 1;
-                    
-                    cout << face[0]+1;
+                faces.push_back(face);
+                visited[face[0]][face[face.size()-1]] += 2;
+                visited[face[face.size()-1]][face[0]] += 2;
                 for (int k = 1; k<face.size(); k++){
-                    visited[face[k]][face[k-1]] = 1;
-                    visited[face[k-1]][face[k]] = 1;
-                    
-                    cout << " " << face[k]+1;
+                    visited[face[k]][face[k-1]] += 2;
+                    visited[face[k-1]][face[k]] += 2;
                 }
-                cout << "\n";
-            }
-            if (visited[u.id][i] == 1){
-                vector<int> face = dfsccw(v, i, u.id, i);
-                face.push_back(u.id);
-                cout << "v: " << i+1 << endl;
-                cout << face.size()+1 << " "; 
-                cout << i+1 << " ";
-                    visited[face[0]][face[face.size()-1]] = 3;
-                    visited[face[face.size()-1]][face[0]] = 3;
-                    
-                    cout << face[0]+1;
-                for (int k = 1; k<face.size(); k++){
-                    visited[face[k]][face[k-1]] = 3;
-                    visited[face[k-1]][face[k]] = 3;
-                    cout << " " << face[k]+1;
-                }
-                cout << "\n";
             }
             if (visited[u.id][i] == 2){
+                vector<int> face = dfsccw(v, i, u.id, i);
+                face.push_back(u.id);
+                faces.push_back(face);
+                visited[face[0]][face[face.size()-1]]+=3;
+                visited[face[face.size()-1]][face[0]]+=3;
+                for (int k = 1; k<face.size(); k++){
+                    visited[face[k]][face[k-1]]+=3;
+                    visited[face[k-1]][face[k]]+=3;
+                }
+            }
+            if (visited[u.id][i] == 3){
                 vector<int> face = dfscw(v, i, u.id, i);
                 face.push_back(u.id);
-                cout << "v: " << i+1 << endl;
-                cout << face.size()+1 << " "; 
-                cout << i+1 << " ";
-                    visited[face[0]][face[face.size()-1]] = 3;
-                    visited[face[face.size()-1]][face[0]] = 3;
-                    
-                    cout << face[0]+1;
+                faces.push_back(face);
+                visited[face[0]][face[face.size()-1]] = 4;
+                visited[face[face.size()-1]][face[0]] = 4;
                 for (int k = 1; k<face.size(); k++){
-                    visited[face[k]][face[k-1]] = 3;
-                    visited[face[k-1]][face[k]] = 3;
-                    cout << " " << face[k]+1;
+                    visited[face[k]][face[k-1]] = 4;
+                    visited[face[k-1]][face[k]] = 4;
                 }
-                cout << "\n";
             }
+                
+                // cout << "v: " << i+1 << endl;
+                // cout << face.size()+1 << " "; 
+                // cout << i+1 << " ";
+                //     visited[face[0]][face[face.size()-1]] = 3;
+                //     visited[face[face.size()-1]][face[0]] = 3;
+                    
+                //     cout << face[0]+1;
+                // for (int k = 1; k<face.size(); k++){
+                //     visited[face[k]][face[k-1]] = 3;
+                //     visited[face[k-1]][face[k]] = 3;
+                //     cout << " " << face[k]+1;
+                // }
+                // cout << "\n";
         }
+    }
+    cout << faces.size() << endl;
+
+    for (auto f : faces){
+        printface(f);
     }
 
     // Ponto a(1, 1);
