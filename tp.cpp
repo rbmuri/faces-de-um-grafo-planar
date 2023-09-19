@@ -107,9 +107,7 @@ vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir)
 }
 
 void printface(vector<int> f){
-        int size = f.size();
-        cout << size+1 << " "; 
-        cout << f[size-1]+1;
+        cout << f.size(); 
         for (int k = 0; k<f.size(); k++)
             cout << " " << f[k]+1;
         cout << "\n";
@@ -147,6 +145,7 @@ int main(){
     //para cada vertice
     for (int i = 0; i<n; i++){
         //para cada aresta
+        cout << visited[8][0] << endl;
         for (auto u : v[i].edgepoints){
             
             //se ainda nao passamos cw
@@ -154,22 +153,20 @@ int main(){
                 //passa e coleta
                 vector<int> face = dfscw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
+                face.push_back(face[0]);
                 faces.push_back(face);
                 //guarda se as arestas foram
                 //visitadas, e de que forma
-                visited[face[0]][face[face.size()-1]] += 3;
-                visited[face[face.size()-1]][face[0]] += 2;
                 for (int k = 1; k<face.size(); k++){
                     visited[face[k]][face[k-1]] += 3;
                     visited[face[k-1]][face[k]] += 2;
                 }
             }
-            if (visited[i][u.id] == 2){
+            if (visited[u.id][i] == 2){
                 vector<int> face = dfsccw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
+                face.push_back(face[0]);
                 faces.push_back(face);
-                visited[face[0]][face[face.size()-1]]+=2;
-                visited[face[face.size()-1]][face[0]]+=3;
                 for (int k = 1; k<face.size(); k++){
                     visited[face[k]][face[k-1]]+=2;
                     visited[face[k-1]][face[k]]+=3;
@@ -178,9 +175,8 @@ int main(){
             if (visited[i][u.id] == 3){
                 vector<int> face = dfscw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
+                face.push_back(face[0]);
                 faces.push_back(face);
-                visited[face[0]][face[face.size()-1]] += 3;
-                visited[face[face.size()-1]][face[0]] += 2;
                 for (int k = 1; k<face.size(); k++){
                     visited[face[k]][face[k-1]] +=3;
                     visited[face[k-1]][face[k]] +=2;
