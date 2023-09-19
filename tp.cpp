@@ -168,41 +168,54 @@ int main(){
                 //passa e coleta
                 vector<int> face = dfscw(v, i, u.id, i);
                 face.push_back(u.id);
+                cout << "v: " << i+1 << endl;
+                cout << face.size()+1 << " "; 
+                cout << i+1 << " ";
                 //cout << "breakpoint 3: s=" << i << " v=" << u.id << endl;;
                     
                     visited[face[0]][face[face.size()-1]] = 1;
                     visited[face[face.size()-1]][face[0]] = 1;
-                    cout << face[0]+1 << " ";
+                    
+                    cout << face[0]+1;
                 for (int k = 1; k<face.size(); k++){
                     visited[face[k]][face[k-1]] = 1;
                     visited[face[k-1]][face[k]] = 1;
-                    cout << face[k]+1 << " ";
+                    
+                    cout << " " << face[k]+1;
                 }
                 cout << "\n";
             }
             if (visited[u.id][i] == 1){
                 vector<int> face = dfsccw(v, i, u.id, i);
                 face.push_back(u.id);
+                cout << "v: " << i+1 << endl;
+                cout << face.size()+1 << " "; 
+                cout << i+1 << " ";
                     visited[face[0]][face[face.size()-1]] = 3;
                     visited[face[face.size()-1]][face[0]] = 3;
-                    cout << face[0]+1 << " ";
+                    
+                    cout << face[0]+1;
                 for (int k = 1; k<face.size(); k++){
                     visited[face[k]][face[k-1]] = 3;
                     visited[face[k-1]][face[k]] = 3;
-                    cout << face[k]+1 << " ";
+                    cout << " " << face[k]+1;
                 }
                 cout << "\n";
             }
             if (visited[u.id][i] == 2){
                 vector<int> face = dfscw(v, i, u.id, i);
                 face.push_back(u.id);
+                cout << "v: " << i+1 << endl;
+                cout << face.size()+1 << " "; 
+                cout << i+1 << " ";
                     visited[face[0]][face[face.size()-1]] = 3;
                     visited[face[face.size()-1]][face[0]] = 3;
-                    cout << face[0]+1 << " ";
+                    
+                    cout << face[0]+1;
                 for (int k = 1; k<face.size(); k++){
                     visited[face[k]][face[k-1]] = 3;
                     visited[face[k-1]][face[k]] = 3;
-                    cout << face[k]+1 << " ";
+                    cout << " " << face[k]+1;
                 }
                 cout << "\n";
             }
