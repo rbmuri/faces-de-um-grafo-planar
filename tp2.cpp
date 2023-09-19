@@ -90,9 +90,9 @@ vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
             break;
         }
     }
-    if (vertice == comeco && (*prox).id == dir) return face;
-    face = dfscw(v, vertice, (*prox).id, comeco, dir);
-    face.push_back((*prox).id);
+    if (vertice == comeco && prox->id == dir) return face;
+    face = dfscw(v, vertice, prox->id, comeco, dir);
+    face.push_back(prox->id);
     return face;         
 }
 vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
@@ -105,9 +105,9 @@ vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir)
             break;
         }
     }
-    if (vertice == comeco && (*prox).id == dir) return face;
-    face = dfsccw(v, vertice, (*prox).id, comeco, dir);
-    face.push_back((*prox).id);
+    if (vertice == comeco && prox->id == dir) return face;
+    face = dfsccw(v, vertice, prox->id, comeco, dir);
+    face.push_back(prox->id);
     return face;         
 }
 
@@ -140,6 +140,7 @@ int main(){
     vector<Ponto> v; //listas de adjacencia
     //vector<vector<int>> visited(n, vector<int>(n, 0));
     vector<vector<int>> faces;
+    bool cw[n][n];
 
     //coleta o grafo
     for (int i = 0; i<n; i++){

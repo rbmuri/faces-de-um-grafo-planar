@@ -10,8 +10,8 @@ public:
     double x, y;
     int id;
     int visited;
-    bool viscw;
-    bool visccw;
+    vector<bool> viscw;
+    vector<bool> visccw;
     vector<Ponto> edgepoints;
     vector<int> edges;
     Ponto(double a, double b){
@@ -19,27 +19,29 @@ public:
         y = b;
         id = -1;
         visited = 0;
-        viscw = 0;
-        visccw = 0;
+        
     }
     Ponto(double a, double b, int c){
         x = a;
         y = b;
         id = c;
         visited = 0;
-        viscw = 0;
-        visccw = 0;
     }
     void add(Ponto a){
         edgepoints.push_back(a);
+        viscw.push_back(true);
+        visccw.push_back(true);
     }
     void add(int i){
         edges.push_back(i);
     }
     //complexidade O(v)
     void build(vector<Ponto> v){
-        for (auto u : edges)
+        for (auto u : edges){
             edgepoints.push_back(v[u]);
+            viscw.push_back(false);
+            visccw.push_back(false);
+        }
     }
     //retorna o angulo polar de uma coordenada
     double polar(){
@@ -60,7 +62,7 @@ public:
 
     bool clockwise(Ponto c, Ponto d){
         Ponto a(1,0);
-        Ponto b = *this - a;
+        Ponto b = *this - a; 
         double angc = relativo(b, *this, c);
         double angd = relativo(b, *this, d);
         return (angc>angd);
@@ -72,6 +74,13 @@ public:
              [&](Ponto a, Ponto b) {
              return clockwise(a, b);
              });
+    }
+
+    bool passedcw(int i){
+        return viscw[i];
+    }
+    bool passedccw(int i){
+        return visccw[i];
     }
 };
 
@@ -90,9 +99,9 @@ vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
             break;
         }
     }
-    if (vertice == comeco && (*prox).id == dir) return face;
-    face = dfscw(v, vertice, (*prox).id, comeco, dir);
-    face.push_back((*prox).id);
+    if (vertice == comeco && prox->id == dir) return face;
+    face = dfscw(v, vertice, prox->id, comeco, dir);
+    face.push_back(prox->id);
     return face;         
 }
 vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
@@ -105,9 +114,9 @@ vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir)
             break;
         }
     }
-    if (vertice == comeco && (*prox).id == dir) return face;
-    face = dfsccw(v, vertice, (*prox).id, comeco, dir);
-    face.push_back((*prox).id);
+    if (vertice == comeco && prox->id == dir) return face;
+    face = dfsccw(v, vertice, prox->id, comeco, dir);
+    face.push_back(prox->id);
     return face;         
 }
 
@@ -117,29 +126,31 @@ void printface(vector<int> f){
             cout << " " << f[k]+1;
         cout << "\n";
 }
-void visit(vector<Ponto> v, int a, int b){
-    
-    for (auto u : v[a].edgepoints){
-        if (u.id == b){
-            // u.visited += 3;
-            u.viscw = true;
-        }
-    }
-    for (auto u : v[b].edgepoints){
-        if (u.id == a){
-            // u.visited += 2;
-            u.visccw = true;
-        }
-    }
+void visit(vector<Ponto>& v, int a, int b) {
+    vector<Ponto>& edges = v[a].edgepoints;
 
+    for (int u = 0; u < edges.size(); u++) {
+        if (edges[u].id == b) {
+            v[a].viscw[u] = true;
+            break;
+        }
+    }
+    vector<Ponto>& edgesb = v[b].edgepoints;
+    for (int u = 0; u < edgesb.size(); u++) {
+        if (edgesb[u].id == a) {
+            v[b].visccw[u] = true;
+            break;
+        }
+    }
 }
+
 
 int main(){
     int n, ed;
     cin >> n >> ed;;
     vector<Ponto> v; //listas de adjacencia
-    //vector<vector<int>> visited(n, vector<int>(n, 0));
     vector<vector<int>> faces;
+    bool cw[n][n];
 
     //coleta o grafo
     for (int i = 0; i<n; i++){
@@ -166,42 +177,30 @@ int main(){
     //para cada vertice
     for (int i = 0; i<n; i++){
         //para cada aresta
-        for (auto u : v[i].edgepoints){
-            
+        vector<Ponto> edges = v[i].edgepoints;
+        for (int u = 0; u < edges.size(); u++){
             //se ainda nao passamos cw
-            if (!u.viscw){
+            if (!v[i].viscw[u]){
                 //passa e coleta
-                vector<int> face = dfscw(v, i, u.id, i, u.id);
-                face.push_back(u.id);
+                vector<int> face = dfscw(v, i, edges[u].id, i, edges[u].id);
+                face.push_back(edges[u].id);
                 face.push_back(face[0]);
                 faces.push_back(face);
                 //guarda se as arestas foram
                 //visitadas, e de que forma
-                for (int k = 1; k<face.size(); k++){
+                for (int k = 1; k<face.size(); k++)
                     visit(v, face[k], face[k-1]);
-                    // visited[face[k]][face[k-1]] += 3;
-                    // visited[face[k-1]][face[k]] += 2;
 
-                }
             }
-            if (!u.visccw){
-                vector<int> face = dfsccw(v, i, u.id, i, u.id);
-                face.push_back(u.id);
+            if (!v[i].visccw[u]){
+                vector<int> face = dfsccw(v, i, edges[u].id, i, edges[u].id);
+                face.push_back(edges[u].id);
                 face.push_back(face[0]);
                 faces.push_back(face);
-                for (int k = 1; k<face.size(); k++){
+                for (int k = 1; k<face.size(); k++)
                     visit(v, face[k-1], face[k]);
-                }
             }
-            if (0){
-                vector<int> face = dfscw(v, i, u.id, i, u.id);
-                face.push_back(u.id);
-                face.push_back(face[0]);
-                faces.push_back(face);
-                for (int k = 1; k<face.size(); k++){
-                    visit(v, face[k], face[k-1]);
-                }
-            }
+            
         }
     }
     cout << faces.size() << endl;
