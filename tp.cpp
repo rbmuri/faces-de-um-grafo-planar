@@ -71,30 +71,6 @@ public:
 };
 
 
-// Distancia euclidiana de a para b.
-double Distancia(Ponto a, Ponto b) {
-    double x = (a.x - b.x), y = (a.y - b.y);
-    return sqrt(x*x + y*y);
-}
-// Coeficiente da reta que passa na origem e p.
-double Inclinacao(Ponto p) {
-    return atan2(p.y, p.x);
-}
-// Coeficiente da reta orientada de p para q.
-double Inclinacaorelativa(Ponto p, Ponto q) {
-    return atan2(q.y - p.y, q.x - p.x);
-}
-// Determina se ao caminhar de a para b e depois de b para c
-// estamos fazendo uma curva a esquerda, a direita, ou seguindo em frente.
-int TipoCurva(Ponto a, Ponto b, Ponto c) {
-    double v = (b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);
-    return v;
-    if (v < 0) return -1; // esquerda.
-    if (v > 0) return +1; // direita.
-    return 0; // em frente.
-}
-
-
 vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
     vector<int> face;
     Ponto* prox;
@@ -141,10 +117,12 @@ void printface(vector<int> f){
 
 int main(){
     int n, ed;
-    cin >> n >> ed;
-    //vector<Ponto> v[n];
+    cin >> n >> ed;;
     vector<Ponto> v; //listas de adjacencia
-    int visited[n][n] = {0};
+    vector<vector<int>> visited(n, vector<int>(n, 0));
+    vector<vector<int>> faces;
+
+    //coleta o grafo
     for (int i = 0; i<n; i++){
         double x, y; 
         int edgenum, edge;
@@ -159,67 +137,55 @@ int main(){
             // armazene suas arestas
         }
     }
-    //cout << "breakpoint 1\n";
+    
+    //ordena
     for (int i = 0; i<n; i++){
         v[i].build(v);
         v[i].edgesort();
     }
-    vector<vector<int>> faces;
-    //cout << "breakpoint 2\n";
+    
     //para cada vertice
     for (int i = 0; i<n; i++){
         //para cada aresta
         for (auto u : v[i].edgepoints){
             
             //se ainda nao passamos cw
-            if (visited[u.id][i] == 0){
+            if (visited[i][u.id] == 0){
                 //passa e coleta
                 vector<int> face = dfscw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
                 faces.push_back(face);
-                visited[face[0]][face[face.size()-1]] += 2;
+                //guarda se as arestas foram
+                //visitadas, e de que forma
+                visited[face[0]][face[face.size()-1]] += 3;
                 visited[face[face.size()-1]][face[0]] += 2;
                 for (int k = 1; k<face.size(); k++){
-                    visited[face[k]][face[k-1]] += 2;
+                    visited[face[k]][face[k-1]] += 3;
                     visited[face[k-1]][face[k]] += 2;
                 }
             }
-            if (visited[u.id][i] == 2){
+            if (visited[i][u.id] == 2){
                 vector<int> face = dfsccw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
                 faces.push_back(face);
-                visited[face[0]][face[face.size()-1]]+=3;
+                visited[face[0]][face[face.size()-1]]+=2;
                 visited[face[face.size()-1]][face[0]]+=3;
                 for (int k = 1; k<face.size(); k++){
-                    visited[face[k]][face[k-1]]+=3;
+                    visited[face[k]][face[k-1]]+=2;
                     visited[face[k-1]][face[k]]+=3;
                 }
             }
-            if (visited[u.id][i] == 3){
+            if (visited[i][u.id] == 3){
                 vector<int> face = dfscw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
                 faces.push_back(face);
-                visited[face[0]][face[face.size()-1]] = 4;
-                visited[face[face.size()-1]][face[0]] = 4;
+                visited[face[0]][face[face.size()-1]] += 3;
+                visited[face[face.size()-1]][face[0]] += 2;
                 for (int k = 1; k<face.size(); k++){
-                    visited[face[k]][face[k-1]] = 4;
-                    visited[face[k-1]][face[k]] = 4;
+                    visited[face[k]][face[k-1]] +=3;
+                    visited[face[k-1]][face[k]] +=2;
                 }
             }
-                
-                // cout << "v: " << i+1 << endl;
-                // cout << face.size()+1 << " "; 
-                // cout << i+1 << " ";
-                //     visited[face[0]][face[face.size()-1]] = 3;
-                //     visited[face[face.size()-1]][face[0]] = 3;
-                    
-                //     cout << face[0]+1;
-                // for (int k = 1; k<face.size(); k++){
-                //     visited[face[k]][face[k-1]] = 3;
-                //     visited[face[k-1]][face[k]] = 3;
-                //     cout << " " << face[k]+1;
-                // }
-                // cout << "\n";
         }
     }
     cout << faces.size() << endl;
@@ -227,23 +193,5 @@ int main(){
     for (auto f : faces){
         printface(f);
     }
-
-    // Ponto a(1, 1);
-    // Ponto b(0, 1);
-    // Ponto c(1, 2);
-    // Ponto d(2, 1);
-    // Ponto e(1, 0);
-    // cout << TipoCurva(a, b, c) << endl << TipoCurva(a, b, d) << endl;
-    // cout << atan2(c-b, b-a) - atan2(b-a, a) << endl;
-    // cout << relativo(a, d, d) << endl;
-    // cout << relativo(d, a, c) << endl;
-    // cout << relativo(d, a, b) << endl;
-    // cout << relativo(d, a, e) << endl;
-    // cout << "\npolares:\n";
-    // cout << a.polar() << endl;
-    // cout << b.polar() << endl;
-    // cout << c.polar() << endl;
-    // cout << d.polar() << endl;
-    // cout << e.polar() << endl;
-    // return 0;
+    return 0;
 };
