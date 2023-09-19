@@ -95,13 +95,9 @@ int TipoCurva(Ponto a, Ponto b, Ponto c) {
 }
 
 
-vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco){
+vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
     vector<int> face;
     Ponto* prox;
-    //verifica se deu uma volta completa
-    if (vertice == comeco) {
-        return face;
-        }
     //para cada aresta saindo do vertice
     for (int i = 0; i < v[vertice].edgepoints.size(); i++){
         //encontra a de onde viemos
@@ -113,14 +109,14 @@ vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco){
             break;
         }
     }
-    face = dfscw(v, vertice, (*prox).id, comeco);
+    if (vertice == comeco && (*prox).id == dir) return face;
+    face = dfscw(v, vertice, (*prox).id, comeco, dir);
     face.push_back((*prox).id);
     return face;         
 }
-vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco){
+vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
     vector<int> face;
     Ponto* prox;
-    if (vertice == comeco) return face;
     for (int i = 0; i < v[vertice].edgepoints.size(); i++){
         if (v[vertice].edgepoints[i].id == saida) {
             if (i==0) i = v[vertice].edgepoints.size();
@@ -128,7 +124,8 @@ vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco){
             break;
         }
     }
-    face = dfsccw(v, vertice, (*prox).id, comeco);
+    if (vertice == comeco && (*prox).id == dir) return face;
+    face = dfsccw(v, vertice, (*prox).id, comeco, dir);
     face.push_back((*prox).id);
     return face;         
 }
@@ -177,7 +174,7 @@ int main(){
             //se ainda nao passamos cw
             if (visited[u.id][i] == 0){
                 //passa e coleta
-                vector<int> face = dfscw(v, i, u.id, i);
+                vector<int> face = dfscw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
                 faces.push_back(face);
                 visited[face[0]][face[face.size()-1]] += 2;
@@ -188,7 +185,7 @@ int main(){
                 }
             }
             if (visited[u.id][i] == 2){
-                vector<int> face = dfsccw(v, i, u.id, i);
+                vector<int> face = dfsccw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
                 faces.push_back(face);
                 visited[face[0]][face[face.size()-1]]+=3;
@@ -199,7 +196,7 @@ int main(){
                 }
             }
             if (visited[u.id][i] == 3){
-                vector<int> face = dfscw(v, i, u.id, i);
+                vector<int> face = dfscw(v, i, u.id, i, u.id);
                 face.push_back(u.id);
                 faces.push_back(face);
                 visited[face[0]][face[face.size()-1]] = 4;
