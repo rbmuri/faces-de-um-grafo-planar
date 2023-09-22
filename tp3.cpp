@@ -11,7 +11,6 @@ public:
     int id;
     int visited;
     vector<bool> viscw;
-    vector<bool> visccw;
     vector<Ponto> edgepoints;
     vector<int> edges;
     Ponto(double a, double b){
@@ -19,7 +18,6 @@ public:
         y = b;
         id = -1;
         visited = 0;
-        
     }
     Ponto(double a, double b, int c){
         x = a;
@@ -30,7 +28,6 @@ public:
     void add(Ponto a){
         edgepoints.push_back(a);
         viscw.push_back(true);
-        visccw.push_back(true);
     }
     void add(int i){
         edges.push_back(i);
@@ -40,7 +37,6 @@ public:
         for (auto u : edges){
             edgepoints.push_back(v[u]);
             viscw.push_back(false);
-            visccw.push_back(false);
         }
     }
     //retorna o angulo polar de uma coordenada
@@ -50,8 +46,10 @@ public:
         return angulo;
     }
     //retorna o angulo entre uma linha e um ponto
-    double relativo(Ponto a, Ponto b, Ponto c){
-        double angulo = (b - a).polar() - (c - b).polar();
+    double relativo(Ponto c){
+        Ponto p(1,0);
+        Ponto a = *this - p;
+        double angulo = (*this - a).polar() - (c - *this).polar();
         return angulo;
     }
 
@@ -60,11 +58,11 @@ public:
     Ponto operator * (const double d) const { return Ponto(x*d, y*d); }
     Ponto operator / (const double d) const { return Ponto(x/d, y/d); }
 
+
     bool clockwise(Ponto c, Ponto d){
-        Ponto a(1,0);
-        Ponto b = *this - a; 
-        double angc = relativo(b, *this, c);
-        double angd = relativo(b, *this, d);
+        
+        double angc = relativo(c);
+        double angd = relativo(d);
         return (angc>angd);
     }
 
@@ -75,17 +73,39 @@ public:
              return clockwise(a, b);
              });
     }
+    // void bucket()
+    // {
+    //     int n = 10;
+    //     // 1) Create n empty buckets
+    //     vector<Ponto> b[n];
+    
+    //     // 2) Put array elements
+    //     // in different buckets
+    //     for (int i = 0; i < n; i++) {
+    
+    //         // Index in bucket
+    //         int bi = n * relativo(edgepoints[i]);
+    //         b[bi].push_back(edgepoints[i]);
+    //     }
+    
+    //     // 3) Sort individual buckets
+    //     for (int i = 0; i < n; i++)
+    //         sort(b[i].begin(), b[i].end(),
+    //             [&](Ponto a, Ponto b) {
+    //             return clockwise(a, b);
+    //             });
+    
+    //     // 4) Concatenate all buckets into arr[]
+    //     int index = 0;
+    //     for (int i = 0; i < n; i++)
+    //         for (int j = 0; j < b[i].size(); j++)
+    //             edgepoints[index++] = b[i][j];
+    // }
 
-    bool passedcw(int i){
-        return viscw[i];
-    }
-    bool passedccw(int i){
-        return visccw[i];
-    }
 };
 
 
-vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
+vector<int> dfscw(vector<Ponto> &v, int saida, int vertice, int comeco, int dir){
     vector<int> face;
     Ponto* prox;
     //para cada aresta saindo do vertice
@@ -96,6 +116,7 @@ vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
             if (i+1==v[vertice].edgepoints.size()) i = -1;
             //designa o proximo como o depois
             prox = &v[vertice].edgepoints[i+1];
+            v[vertice].viscw[i+1] = true;
             break;
         }
     }
@@ -104,21 +125,7 @@ vector<int> dfscw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
     face.push_back(prox->id);
     return face;         
 }
-vector<int> dfsccw(vector<Ponto> v, int saida, int vertice, int comeco, int dir){
-    vector<int> face;
-    Ponto* prox;
-    for (int i = 0; i < v[vertice].edgepoints.size(); i++){
-        if (v[vertice].edgepoints[i].id == saida) {
-            if (i==0) i = v[vertice].edgepoints.size();
-            prox = &v[vertice].edgepoints[i-1];
-            break;
-        }
-    }
-    if (vertice == comeco && prox->id == dir) return face;
-    face = dfsccw(v, vertice, prox->id, comeco, dir);
-    face.push_back(prox->id);
-    return face;         
-}
+
 
 void printface(vector<int> f){
         cout << f.size(); 
@@ -126,35 +133,22 @@ void printface(vector<int> f){
             cout << " " << f[k]+1;
         cout << "\n";
 }
-void visit(vector<Ponto>& v, int a, int b) {
-    vector<Ponto>& edges = v[a].edgepoints;
-
-    for (int u = 0; u < edges.size(); u++) {
-        if (edges[u].id == b) {
-            v[a].viscw[u] = true;
-            break;
-        }
-    }
-    vector<Ponto>& edgesb = v[b].edgepoints;
-    for (int u = 0; u < edgesb.size(); u++) {
-        if (edgesb[u].id == a) {
-            v[b].visccw[u] = true;
-            break;
-        }
-    }
+void printface(vector<Ponto> f){
+        cout << f.size(); 
+        for (int k = 0; k<f.size(); k++)
+            cout << " " << f[k].id+1;
+        cout << "\n";
 }
-
 
 int main(){
     int n, ed;
     cin >> n >> ed;;
     vector<Ponto> v; //listas de adjacencia
     vector<vector<int>> faces;
-    bool cw[n][n];
 
     //coleta o grafo
     for (int i = 0; i<n; i++){
-        double x, y; 
+        double x, y;
         int edgenum, edge;
         cin >> x >> y;
         Ponto a(x, y, i);
@@ -167,11 +161,10 @@ int main(){
             // armazene suas arestas
         }
     }
-    
-    //ordena
+
     for (int i = 0; i<n; i++){
         v[i].build(v);
-        v[i].edgesort();
+        // v[i].edgesort();
     }
     
     //para cada vertice
@@ -183,22 +176,11 @@ int main(){
             if (!v[i].viscw[u]){
                 //passa e coleta
                 vector<int> face = dfscw(v, i, edges[u].id, i, edges[u].id);
+                //push back no primeiro vertice pra terminar
                 face.push_back(edges[u].id);
                 face.push_back(face[0]);
                 faces.push_back(face);
-                //guarda se as arestas foram
-                //visitadas, e de que forma
-                for (int k = 1; k<face.size(); k++)
-                    visit(v, face[k], face[k-1]);
 
-            }
-            if (!v[i].visccw[u]){
-                vector<int> face = dfsccw(v, i, edges[u].id, i, edges[u].id);
-                face.push_back(edges[u].id);
-                face.push_back(face[0]);
-                faces.push_back(face);
-                for (int k = 1; k<face.size(); k++)
-                    visit(v, face[k-1], face[k]);
             }
             
         }
@@ -210,3 +192,30 @@ int main(){
     }
     return 0;
 };
+
+
+
+
+
+
+
+
+/*
+15 0
+0 0 3 2 3 6
+4 3 3 1 4 8
+3 -4 3 1 5 14
+8 0 3 2 5 10
+5 -4 3 3 4 12
+1 0 4 1 7 8 14
+2 0 3 6 9 15 
+4 2 4 2 6 9 10
+4 1 3 7 8 11
+7 0 4 4 8 11 12
+6 0 3 9 10 13
+5 -3 4 5 10 13 14
+5 -2 3 11 12 15
+3 -3 4 3 6 12 15
+3 -2 3 7 13 14
+
+*/

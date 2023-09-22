@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "faces-de-um-grafo-planar",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"iostream": "cpp"
+		}
+	}
+}
