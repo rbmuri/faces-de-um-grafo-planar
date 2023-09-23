@@ -13,6 +13,7 @@ public:
     vector<bool> viscw;
     vector<Ponto> edgepoints;
     vector<int> edges;
+    map<int, int> next;
     Ponto(double a, double b){
         x = a;
         y = b;
@@ -37,6 +38,19 @@ public:
         for (auto u : edges){
             edgepoints.push_back(v[u]);
             viscw.push_back(false);
+        }
+
+        sort(edgepoints.begin(), 
+             edgepoints.begin() + edgepoints.size(), 
+             [&](Ponto a, Ponto b) {
+             return clockwise(a, b);
+             });
+
+        for (int i = 0; i < edgepoints.size(); i++){
+            if (i+1 == edgepoints.size())
+                next[edgepoints[i].id] = next[edgepoints[0].id];
+            else
+                next[edgepoints[i].id] = next[edgepoints[i+1].id];
         }
     }
     //retorna o angulo polar de uma coordenada
@@ -66,13 +80,7 @@ public:
         return (angc>angd);
     }
 
-    void edgesort(){
-        sort(edgepoints.begin(), 
-             edgepoints.begin() + edgepoints.size(), 
-             [&](Ponto a, Ponto b) {
-             return clockwise(a, b);
-             });
-    }
+
     // void bucket()
     // {
     //     int n = 10;
@@ -164,7 +172,6 @@ int main(){
 
     for (int i = 0; i<n; i++){
         v[i].build(v);
-        // v[i].edgesort();
     }
     
     //para cada vertice
