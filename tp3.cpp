@@ -5,52 +5,52 @@ using namespace std;
 
 
 
-class Ponto {
-public:
+struct Ponto {
+
     double x, y;
     int id;
-    int visited;
-    vector<bool> viscw;
+    map<int, bool> viscw;
     vector<Ponto> edgepoints;
     vector<int> edges;
     map<int, int> next;
+    //map<int, int> edgeangles;
     Ponto(double a, double b){
         x = a;
         y = b;
         id = -1;
-        visited = 0;
     }
     Ponto(double a, double b, int c){
         x = a;
         y = b;
         id = c;
-        visited = 0;
     }
     void add(Ponto a){
         edgepoints.push_back(a);
-        viscw.push_back(true);
     }
     void add(int i){
         edges.push_back(i);
     }
     //complexidade O(v)
-    void build(vector<Ponto> v){
+    void buildedges(vector<Ponto> v){
         for (auto u : edges){
             edgepoints.push_back(v[u]);
-            viscw.push_back(false);
-        }
-
+        } 
+    }
+    void sortedges(){
         sort(edgepoints.begin(), 
              edgepoints.begin() + edgepoints.size(), 
              [&](Ponto a, Ponto b) {
              return clockwise(a, b);
              });
-
+    }
+    void buildpaths(){   
         for (int i = 0; i < edgepoints.size(); i++){
-            if (i+1 == edgepoints.size())
-                next[edgepoints[i].id] = next[edgepoints[0].id];
+            if (i == 0)
+                next[edgepoints[i].id] = edgepoints[edgepoints.size()-1].id;
             else
-                next[edgepoints[i].id] = next[edgepoints[i+1].id];
+                next[edgepoints[i].id] = edgepoints[i-1].id;
+
+            //viscw[edgepoints[i].id] = false;
         }
     }
     //retorna o angulo polar de uma coordenada
@@ -61,9 +61,11 @@ public:
     }
     //retorna o angulo entre uma linha e um ponto
     double relativo(Ponto c){
+        //if (edgeangles[c.id]) return edgeangles[c.id];
         Ponto p(1,0);
         Ponto a = *this - p;
         double angulo = (*this - a).polar() - (c - *this).polar();
+        //edgeangles[c.id] = angulo;
         return angulo;
     }
 
@@ -80,61 +82,9 @@ public:
         return (angc>angd);
     }
 
-
-    // void bucket()
-    // {
-    //     int n = 10;
-    //     // 1) Create n empty buckets
-    //     vector<Ponto> b[n];
-    
-    //     // 2) Put array elements
-    //     // in different buckets
-    //     for (int i = 0; i < n; i++) {
-    
-    //         // Index in bucket
-    //         int bi = n * relativo(edgepoints[i]);
-    //         b[bi].push_back(edgepoints[i]);
-    //     }
-    
-    //     // 3) Sort individual buckets
-    //     for (int i = 0; i < n; i++)
-    //         sort(b[i].begin(), b[i].end(),
-    //             [&](Ponto a, Ponto b) {
-    //             return clockwise(a, b);
-    //             });
-    
-    //     // 4) Concatenate all buckets into arr[]
-    //     int index = 0;
-    //     for (int i = 0; i < n; i++)
-    //         for (int j = 0; j < b[i].size(); j++)
-    //             edgepoints[index++] = b[i][j];
-    // }
-
 };
 
-
-vector<int> dfscw(vector<Ponto> &v, int saida, int vertice, int comeco, int dir){
-    vector<int> face;
-    Ponto* prox;
-    //para cada aresta saindo do vertice
-    for (int i = 0; i < v[vertice].edgepoints.size(); i++){
-        //encontra a de onde viemos
-        if (v[vertice].edgepoints[i].id == saida) {
-            //safeguard para loop
-            if (i+1==v[vertice].edgepoints.size()) i = -1;
-            //designa o proximo como o depois
-            prox = &v[vertice].edgepoints[i+1];
-            v[vertice].viscw[i+1] = true;
-            break;
-        }
-    }
-    if (vertice == comeco && prox->id == dir) return face;
-    face = dfscw(v, vertice, prox->id, comeco, dir);
-    face.push_back(prox->id);
-    return face;         
-}
-
-
+ 
 void printface(vector<int> f){
         cout << f.size(); 
         for (int k = 0; k<f.size(); k++)
@@ -148,9 +98,23 @@ void printface(vector<Ponto> f){
         cout << "\n";
 }
 
+void dfscw(vector<Ponto> &v, vector<int> &face, int saida, int vertice, int comeco, int dir){
+    int prox;
+    //para cada aresta saindo do vertice
+
+    prox = v[vertice].next[saida];
+    v[vertice].viscw[prox] = true;
+    
+    if (vertice == comeco && prox == dir) return;
+    dfscw(v, face, vertice, prox, comeco, dir);
+    face.push_back(prox);
+    return;      
+}
+ 
 int main(){
+    //clock_t start = clock();
     int n, ed;
-    cin >> n >> ed;;
+    cin >> n >> ed;
     vector<Ponto> v; //listas de adjacencia
     vector<vector<int>> faces;
 
@@ -169,42 +133,52 @@ int main(){
             // armazene suas arestas
         }
     }
-
+    //clock_t receber = clock() - start;
     for (int i = 0; i<n; i++){
-        v[i].build(v);
+        v[i].buildedges(v);
     }
-    
+    //clock_t builde = clock() - receber - start;
+    for (int i = 0; i<n; i++){
+        v[i].sortedges();
+    }
+    //clock_t sorte = clock() - builde - receber - start;
+    for (int i = 0; i<n; i++){
+        v[i].buildpaths();
+    }
+    //clock_t buildp = clock() - sorte - builde - receber - start;
     //para cada vertice
     for (int i = 0; i<n; i++){
         //para cada aresta
         vector<Ponto> edges = v[i].edgepoints;
+        
         for (int u = 0; u < edges.size(); u++){
             //se ainda nao passamos cw
-            if (!v[i].viscw[u]){
+            if (!v[i].viscw[edges[u].id]){
                 //passa e coleta
-                vector<int> face = dfscw(v, i, edges[u].id, i, edges[u].id);
+                vector<int> face;
+                dfscw(v, face, i, edges[u].id, i, edges[u].id);
+                
                 //push back no primeiro vertice pra terminar
                 face.push_back(edges[u].id);
                 face.push_back(face[0]);
                 faces.push_back(face);
-
             }
             
         }
     }
+    //clock_t dfs = clock() - buildp - sorte - builde - receber - start;
     cout << faces.size() << endl;
 
     for (auto f : faces){
         printface(f);
     }
+    // cout << "clock receber: " << receber << endl;
+    // cout << "clock buildedges: " << builde << endl;
+    // cout << "clock sortedges: " << sorte << endl;
+    // cout << "clock buildpaths: " << buildp << endl;
+    // cout << "clock dfscw: " << dfs << endl;
     return 0;
 };
-
-
-
-
-
-
 
 
 /*
